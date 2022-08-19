@@ -1,4 +1,4 @@
-import countries from '../info/countries'
+import countries from '../data/countries'
 
 import { GET_COUNTRIES } from '../actions/countries'
 const countryCodes = (state = countries, action) => {

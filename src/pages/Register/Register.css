@@ -1,0 +1,9 @@
+input#password {
+  padding-right: 30%;
+}
+
+.register-title {
+  width: 100%;
+  height: 40px;
+  text-align: center;
+}

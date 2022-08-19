@@ -1,8 +1,8 @@
 import './App.css'
 import { Routes, Route } from 'react-router-dom'
 
-import { Home } from './pages/Home'
-import { Register } from './pages/Register'
+import { Home } from './pages/Home/Home'
+import { Register } from './pages/Register/Register'
 function App() {
   return (
     <div className="App">

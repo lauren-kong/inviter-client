@@ -1,39 +1,26 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import {
-  Container,
-  Box,
-  Button,
-  FormControl,
-  Input,
-  InputLabel,
-  TextField,
-  Autocomplete,
-  Typography,
-  containerClasses,
-} from '@mui/material'
-import { fetchCountries } from '../actions'
-import inviterLogo from '../../public/images/inviter-logo.png'
+import { useNavigate } from 'react-router-dom'
+import { Container, Box, Button, TextField, Autocomplete, Typography } from '@mui/material'
 
-import { toValidNumber } from '../utils'
+import { fetchCountries } from '../../actions'
+import { toValidNumber, initialNewUserState, nz } from '../../utils'
+import { registerUser } from '../../actions'
+import './Register.css'
+import styles from './style'
 
-const initialNewUserState = {
-  email: '',
-  password: '',
-  firstname: '',
-  lastname: '',
-  mobile: '',
-  kakao: '',
-  facebook: '',
-}
 export const Register = () => {
   const dispatch = useDispatch()
+  const navigate = useNavigate()
   const countries = useSelector((state) => state.countries)
-  const [selectedCountry, setSelectedCountry] = useState({ code: 'NZ', label: 'New Zealand', phone: '64' })
+  const emailRef = useRef()
+
+  const [selectedCountry, setSelectedCountry] = useState(nz)
   const [mobile, setMobile] = useState('')
   const [newUser, setNewUser] = useState(initialNewUserState)
   const [showPassword, setShowPassword] = useState(false)
   const [triedRegister, setTriedRegister] = useState(false)
+  const [emailValid, setEmailValid] = useState(false)
 
   useEffect(() => {
     dispatch(fetchCountries())
@@ -41,13 +28,25 @@ export const Register = () => {
 
   function handleRegister() {
     const textfields = Array.from(document.querySelectorAll('input'))
-    console.log(textfields)
     const requiredInputs = textfields.filter((input) => input.attributes.required)
     const emptyInputs = requiredInputs.filter((input) => !input.value)
+    const isEmailValid = /\S+@\S+\.\S+/.test(emailRef.current.querySelector('input').value)
+    setEmailValid(isEmailValid)
 
-    if (!emptyInputs) {
+    console.log('emptyInputs', !emptyInputs.length === 0)
+    console.log('isEmailValid', isEmailValid)
+    if (emptyInputs.length === 0 && isEmailValid) {
+      console.log('done')
       const validMobile = toValidNumber(selectedCountry, mobile)
       const newUserData = { ...newUser, mobile: validMobile }
+      dispatch(registerUser(newUserData))
+      setSelectedCountry(nz)
+      setMobile('')
+      setNewUser(initialNewUserState)
+      setShowPassword(false)
+      setTriedRegister(false)
+      setEmailValid(false)
+      navigate('/')
     } else {
       setTriedRegister(!triedRegister)
     }
@@ -55,23 +54,15 @@ export const Register = () => {
 
   return (
     newUser && (
-      <Container sx={{ width: '500px', height: '100vh', padding: '30px', marginTop: '30px' }}>
-        <Box
-          sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', gap: '30px' }}
-        >
-          <Box className="web-register">
-            <Box className="logo">
-              <img src={inviterLogo}></img>
-              <Typography variant="body">Inviter</Typography>
-            </Box>
-            <Box className="register-title">
-              <Typography variant="h5">Registration</Typography>
-            </Box>
+      <Container sx={styles.container}>
+        <Box sx={styles.titleBox}>
+          <Box className="register-title">
+            <Typography variant="h5">Registration</Typography>
           </Box>
-          <div className="name-field" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+          <Box className="name-field" sx={styles.nameBox}>
             <TextField
               error={triedRegister && !newUser.firstname}
-              sx={{ width: '45%' }}
+              sx={styles.firstname}
               id="first-name"
               label="First Name"
               value={newUser.firstname}
@@ -79,20 +70,23 @@ export const Register = () => {
               onChange={(e) => setNewUser({ ...newUser, firstname: e.target.value })}
               type="text"
               required
+              helperText={triedRegister && !newUser.firstname ? 'please enter your first name' : ''}
             />
             <TextField
               error={triedRegister && !newUser.lastname}
-              sx={{ width: '45%' }}
+              sx={styles.lastname}
               id="last-name"
               label="Last Name"
               value={newUser.lastname}
               onChange={(e) => setNewUser({ ...newUser, lastname: e.target.value })}
               type="text"
               required
+              helperText={triedRegister && !newUser.lastname ? 'please enter your last name' : ''}
             />
-          </div>
+          </Box>
           <TextField
-            error={triedRegister && !newUser.email}
+            ref={emailRef}
+            error={(triedRegister && !newUser.email) || (triedRegister && !emailValid)}
             required
             id="email"
             label="Email"
@@ -100,15 +94,16 @@ export const Register = () => {
             type="email"
             fullWidth
             value={newUser.email}
-            onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-          />
-          <div
-            className="password-field"
-            style={{
-              width: '100%',
-              position: 'relative',
+            onChange={(e) => {
+              setEmailValid(/\S+@\S+\.\S+/.test(e.target.value))
+              setNewUser({ ...newUser, email: e.target.value })
             }}
-          >
+            helperText={
+              (triedRegister && !newUser.email && 'please enter your email') ||
+              (triedRegister && !emailValid && 'wrong email format')
+            }
+          />
+          <div className="password-field" style={styles.passwordDiv}>
             <TextField
               error={triedRegister && !newUser.password}
               required
@@ -121,7 +116,7 @@ export const Register = () => {
               onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
             />
             <Button
-              sx={{ width: '15%', height: '100%', position: 'absolute', right: 0 }}
+              sx={styles.pwdShowButton}
               variant="text"
               onClick={() => {
                 setShowPassword(!showPassword)
@@ -130,21 +125,19 @@ export const Register = () => {
               Show
             </Button>
           </div>
-          <div
-            className="phone-field"
-            style={{ display: 'flex', justifyContent: 'space-between', width: '100%', gap: '10px' }}
-          >
+          <div className="phone-field" style={styles.mobileDiv}>
             <Autocomplete
               id="country-select-demo"
               required
-              sx={{ width: 250 }}
+              sx={styles.countrySelect}
               options={countries}
               autoHighlight
               value={selectedCountry}
               onChange={(e, newValue) => setSelectedCountry(newValue)}
+              isOptionEqualToValue={(option, value) => option.code === value.code}
               getOptionLabel={(option) => `${option.code} (+ ${option.phone})`}
               renderOption={(props, option) => (
-                <Box component="li" sx={{ '& > img': { mr: 2, flexShrink: 0 }, fontSize: '12px' }} {...props}>
+                <Box component="li" sx={styles.countryList} {...props}>
                   <img
                     loading="lazy"
                     width="20"
@@ -198,7 +191,7 @@ export const Register = () => {
             value={newUser.facebook}
             onChange={(e) => setNewUser({ ...newUser, facebook: e.target.value })}
           />
-          <Button variant="contained" fullWidth sx={{ height: '50px' }} onClick={handleRegister}>
+          <Button variant="contained" fullWidth sx={{ height: '50px', fontSize: '18px' }} onClick={handleRegister}>
             Register
           </Button>
         </Box>

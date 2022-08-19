@@ -21,6 +21,14 @@ const inviterTheme = createTheme({
       contrastText: '#ffffff',
     },
   },
+  breakpoints: {
+    values: {
+      mobile: 0,
+      tablet: 640,
+      laptop: 1024,
+      desktop: 1200,
+    },
+  },
 })
 
 ReactDOM.createRoot(document.getElementById('root')).render(
